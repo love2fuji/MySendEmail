@@ -20,14 +20,16 @@ namespace MySendEmail
         {
             InitializeComponent();
         }
+
+        public static DES dd = new DES();
         //发件人邮箱
         public static string MailFrom = Config.GetValue("MailFrom");
         public static string MailSshPwd = Config.GetValue("MailSshPwd");
         //收件人地址，抄送地址（多个地址使用英文分号分割）
         public static string MailToStr = Config.GetValue("MailToStr");
-        public static string MailToCcStr = Config.GetValue("MailToCcStr"); 
+        public static string MailToCcStr = Config.GetValue("MailToCcStr");
         //邮件主题及内容
-        public static string MailSubject = Config.GetValue("MailSubject"); 
+        public static string MailSubject = Config.GetValue("MailSubject");
         public static string MailBody = Config.GetValue("MailBody");
         //邮件附件所在文件夹路径
         public static string MailAttachmentsPath = Config.GetValue("MailAttachmentsPath");
@@ -52,46 +54,12 @@ namespace MySendEmail
             textBoxSendTime.Text = MailSendTime;
             Runtime.ShowLog("定时发送时间为:" + MailSendTime);
 
+            DateTime sendTime = Convert.ToDateTime(MailSendTime);
+            DateTime nowTime = DateTime.Now;
 
+            Runtime.ShowLog("定时发送时间为:" + sendTime);
+            Runtime.ShowLog("当前的时间为:" + nowTime);
 
-        }
-
-        public void SendMailBy163()
-        {
-            //163-- > qq   成功
-            /*
-                        SmtpClient client = new SmtpClient("smtp.163.com", 25);
-                        client.EnableSsl = true;
-                        client.Credentials = new NetworkCredential("edgarwen@163.com", "edgarwen1215");
-                        MailMessage mail = new MailMessage();
-                        mail.From = new MailAddress("edgarwen@163.com");
-                        mail.To.Add(new MailAddress("522191646@qq.com"));
-                        mail.IsBodyHtml = true;
-                        mail.Priority = MailPriority.Normal;
-                        mail.Subject = "这是主题";
-                        mail.Body = "这是内容";
-                        //电子邮件正文的编码
-                        mail.BodyEncoding = Encoding.Default;
-
-                        //在有附件的情况下添加附件
-                        try
-                        {
-                            if (attachmentsPath != null && attachmentsPath.Length > 0)
-                            {
-                                Attachment attachFile = null;
-                                foreach (string path in attachmentsPath)
-                                {
-                                    attachFile = new Attachment(path);
-                                    mail.Attachments.Add(attachFile);
-                                }
-                            }
-                        }
-                        catch (Exception err)
-                        {
-                            throw new Exception("在添加附件时有错误:" + err);
-                        }
-                        client.Send(mail);
-                        */
         }
 
 
@@ -99,12 +67,11 @@ namespace MySendEmail
         {
             try
             {
-
                 Email myEmail = new Email();
                 myEmail.host = "smtp.163.com";
                 myEmail.mailSshPwd = MailSshPwd;
                 myEmail.mailFrom = MailFrom;
-                myEmail.mailToArray = MailToStr.Split(';'); 
+                myEmail.mailToArray = MailToStr.Split(';');
                 myEmail.mailCcArray = MailToCcStr.Split(';');
                 myEmail.mailSubject = MailSubject;
                 myEmail.mailBody = MailBody;
@@ -112,6 +79,7 @@ namespace MySendEmail
                 if (myEmail.Send())
                 {
                     Config.log.Info("Email 发送 成功!");
+                    Runtime.ShowLog("Email 发送 成功!");
                 }
 
             }
@@ -119,6 +87,7 @@ namespace MySendEmail
             {
                 Console.WriteLine(DateTime.Now.ToLongTimeString() + "Email 发送 失败! 详细：" + ex.Message);
                 Config.log.Info(DateTime.Now.ToLongTimeString() + "Email 发送 失败! 详细：" + ex.Message);
+                Runtime.ShowLog("Email 发送 失败! 详细：" + ex.Message);
             }
 
         }
@@ -129,44 +98,81 @@ namespace MySendEmail
             {
                 try
                 {
-                    //获取一个文件夹内全部Excel文件
-                    DirectoryInfo folder = new DirectoryInfo(MailAttachmentsPath);
-                    MailAttachmentsList.Clear();
-                    foreach (FileInfo file in folder.GetFiles("*.xls"))
-                    {
-                        MailAttachmentsList.Add(file.FullName);
-                        Runtime.ShowLog("当前路径：" + folder + "  中 的文件为：" + file.FullName);
-                    }
+                    DateTime sendTime = Convert.ToDateTime(MailSendTime);
+                    DateTime nowTime = DateTime.Now;
 
-                    Email myEmail = new Email();
-                    myEmail.host = "smtp.163.com";
-                    myEmail.mailSshPwd = MailSshPwd;
-                    myEmail.mailFrom = MailFrom;
-                    myEmail.mailToArray = MailToStr.Split(';');
-                    myEmail.mailCcArray = MailToCcStr.Split(';');
-                    myEmail.mailSubject = MailSubject;
-                    myEmail.mailBody = MailBody;
-                    myEmail.attachmentsPath = MailAttachmentsList.ToArray();
-                    if (myEmail.Send())
+                    if (nowTime.Hour.Equals(sendTime.Hour) && nowTime.Minute.Equals(sendTime.Minute))
                     {
-                        Config.log.Info("Email 发送 成功!");
-                        Runtime.ShowLog("Email 发送 成功!");
-                    }
+                        //获取一个文件夹内全部Excel文件
+                        DirectoryInfo folder = new DirectoryInfo(MailAttachmentsPath);
+                        MailAttachmentsList.Clear();
+                        foreach (FileInfo file in folder.GetFiles("*.xls"))
+                        {
+                            MailAttachmentsList.Add(file.FullName);
+                            Config.log.Info("当前路径：" + folder + "  中 的文件为：" + file.FullName);
+                            Runtime.ShowLog("当前路径：" + folder + "  中 的文件为：" + file.FullName);
+                        }
+                        //获取最新的一个文件
+                        MailAttachmentsList.Sort();
+                        List<string> MailAttachmentsLastOne = new List<string>();
+                        if (MailAttachmentsList != null && MailAttachmentsList.Count > 0)
+                        {
+                            MailAttachmentsLastOne.Add(MailAttachmentsList.Last());
+                            Runtime.ShowLog("当前路径：" + folder + "  中 的最新一个文件为：" + MailAttachmentsList.Last());
+                            Config.log.Info("当前路径：" + folder + "  中 的最新一个文件为：" + MailAttachmentsList.Last());
+                        }
 
-                    System.Threading.Thread.Sleep(60000*60);
+                        Email myEmail = new Email();
+                        myEmail.host = "smtp.163.com";
+                        myEmail.mailSshPwd = MailSshPwd;
+                        myEmail.mailFrom = MailFrom;
+                        myEmail.mailToArray = MailToStr.Split(';');
+                        myEmail.mailCcArray = MailToCcStr.Split(';');
+                        myEmail.mailSubject = MailSubject;
+                        myEmail.mailBody = MailBody;
+                        myEmail.attachmentsPath = MailAttachmentsLastOne.ToArray();
+                        if (myEmail.Send())
+                        {
+                            Config.log.Info("Email 发送 给："+ MailToStr+"成功");
+                            Config.log.Info("Email 抄送 给："+ MailToCcStr + "成功");
+                            //Config.log.Info("Email 附件为："+ MailAttachmentsLastOne.ToString());
+                            Runtime.ShowLog("Email 发送 给：" + MailToStr + "成功");
+                            //Runtime.ShowLog("Email 附件为："+ MailAttachmentsLastOne.ToString());
+                        }
+                    }
+                    System.Threading.Thread.Sleep(60000 * 1);
                     continue;
                 }
                 catch (Exception ex)
                 {
                     Runtime.ShowLog("！！！ 发送邮件失败 ！！！  详细：" + ex.Message);
-                   Config.log.Error("！！！  发送邮件失败！！！  详细：" + ex.Message);
-                    System.Threading.Thread.Sleep(60000*30);
+                    Config.log.Error("！！！  发送邮件失败！！！  详细：" + ex.Message);
+                    System.Threading.Thread.Sleep(60000 * 30);
                     continue;
                 }
             }
 
         }
 
+        //文件夹中按时间排序最新的文件读取
+        public class DirectoryLastTimeComparer : IComparer<DirectoryInfo>
+        {
+            #region IComparer<DirectoryInfo> 成员
+
+            public int Compare(DirectoryInfo x, DirectoryInfo y)
+            {
+                return x.LastWriteTime.CompareTo(y.LastWriteTime);
+                //依名称排序
+                //return x.FullName.CompareTo(y.FullName);//递增
+                //return y.FullName.CompareTo(x.FullName);//递减
+
+                //依修改日期排序
+                //return x.LastWriteTime.CompareTo(y.LastWriteTime);//递增
+                //return y.LastWriteTime.CompareTo(x.LastWriteTime);//递减
+            }
+
+            #endregion
+        }
         private void btnStart_Click(object sender, EventArgs e)
         {
             try
@@ -180,7 +186,7 @@ namespace MySendEmail
                 foreach (FileInfo file in folder.GetFiles("*.xls"))
                 {
                     MailAttachmentsList.Add(file.FullName);
-                    Runtime.ShowLog("当前路径："+ folder+"  中 的文件为：" + file.FullName);
+                    Runtime.ShowLog("当前路径：" + folder + "  中 的文件为：" + file.FullName);
                 }
 
                 Thread StartSendEmailThread = new Thread(RunSendMailLoop);
@@ -214,7 +220,18 @@ namespace MySendEmail
                 MailAttachmentsList.Add(file.FullName);
                 Runtime.ShowLog("当前路径：" + folder + "  中 的文件为：" + file.FullName);
             }
-            SendMailBy163MailService(MailAttachmentsList);
+
+
+            //获取最新的一个文件
+            MailAttachmentsList.Sort();
+            List<string> MailAttachmentsLastOne = new List<string>();
+            if (MailAttachmentsList != null && MailAttachmentsList.Count > 0)
+            {
+                MailAttachmentsLastOne.Add(MailAttachmentsList.Last());
+                Runtime.ShowLog("当前路径：" + folder + "  中 的最新一个文件为：" + MailAttachmentsList.Last());
+            }
+
+            SendMailBy163MailService(MailAttachmentsLastOne);
         }
     }
 }
