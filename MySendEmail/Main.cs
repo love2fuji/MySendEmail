@@ -44,6 +44,7 @@ namespace MySendEmail
         private void Form1_Load(object sender, EventArgs e)
         {
             Runtime.ServerLog = this.ServerLog;
+
             Runtime.m_IsRunning = false;
             Runtime.ShowLog("初始化软件");
             Config.log.Info("初始化软件");
@@ -67,14 +68,15 @@ namespace MySendEmail
         {
             try
             {
+                DateTime nowTime = DateTime.Now;
                 Email myEmail = new Email();
                 myEmail.host = "smtp.163.com";
                 myEmail.mailSshPwd = MailSshPwd;
                 myEmail.mailFrom = MailFrom;
                 myEmail.mailToArray = MailToStr.Split(';');
                 myEmail.mailCcArray = MailToCcStr.Split(';');
-                myEmail.mailSubject = MailSubject;
-                myEmail.mailBody = MailBody;
+                myEmail.mailSubject = MailSubject + "(" + nowTime.ToString("yyyy-MM-dd HH:mm:ss") + ") 测试成功";
+                myEmail.mailBody = MailBody + "(" + nowTime.ToString("yyyy-MM-dd HH:mm:ss") + ") 测试成功"; ;
                 myEmail.attachmentsPath = attachFileList.ToArray();
                 if (myEmail.Send())
                 {
@@ -101,46 +103,55 @@ namespace MySendEmail
                     DateTime sendTime = Convert.ToDateTime(MailSendTime);
                     DateTime nowTime = DateTime.Now;
 
-                    if (nowTime.Hour.Equals(sendTime.Hour) && nowTime.Minute.Equals(sendTime.Minute))
-                    {
-                        //获取一个文件夹内全部Excel文件
-                        DirectoryInfo folder = new DirectoryInfo(MailAttachmentsPath);
-                        MailAttachmentsList.Clear();
-                        foreach (FileInfo file in folder.GetFiles("*.xls"))
-                        {
-                            MailAttachmentsList.Add(file.FullName);
-                            Config.log.Info("当前路径：" + folder + "  中 的文件为：" + file.FullName);
-                            Runtime.ShowLog("当前路径：" + folder + "  中 的文件为：" + file.FullName);
-                        }
-                        //获取最新的一个文件
-                        MailAttachmentsList.Sort();
-                        List<string> MailAttachmentsLastOne = new List<string>();
-                        if (MailAttachmentsList != null && MailAttachmentsList.Count > 0)
-                        {
-                            MailAttachmentsLastOne.Add(MailAttachmentsList.Last());
-                            Runtime.ShowLog("当前路径：" + folder + "  中 的最新一个文件为：" + MailAttachmentsList.Last());
-                            Config.log.Info("当前路径：" + folder + "  中 的最新一个文件为：" + MailAttachmentsList.Last());
-                        }
+                    //if (nowTime.Hour.Equals(sendTime.Hour) && nowTime.Minute.Equals(sendTime.Minute))
+                    //{
 
-                        Email myEmail = new Email();
-                        myEmail.host = "smtp.163.com";
-                        myEmail.mailSshPwd = MailSshPwd;
-                        myEmail.mailFrom = MailFrom;
-                        myEmail.mailToArray = MailToStr.Split(';');
-                        myEmail.mailCcArray = MailToCcStr.Split(';');
-                        myEmail.mailSubject = MailSubject;
-                        myEmail.mailBody = MailBody;
-                        myEmail.attachmentsPath = MailAttachmentsLastOne.ToArray();
-                        if (myEmail.Send())
+                    MailAttachmentsList.Clear();
+
+                    string[] MailPathArry = MailAttachmentsPath.Split(';');
+                    if (MailPathArry != null)
+                    {
+                        for (int i = 0; i < MailPathArry.Length; i++)
                         {
-                            Config.log.Info("Email 发送 给："+ MailToStr+"成功");
-                            Config.log.Info("Email 抄送 给："+ MailToCcStr + "成功");
-                            //Config.log.Info("Email 附件为："+ MailAttachmentsLastOne.ToString());
-                            Runtime.ShowLog("Email 发送 给：" + MailToStr + "成功");
-                            //Runtime.ShowLog("Email 附件为："+ MailAttachmentsLastOne.ToString());
+                            //获取一个文件夹内全部Excel文件
+                            List<string> mailAttachmentsLastOne = new List<string>();
+                            DirectoryInfo folder = new DirectoryInfo(MailPathArry[i].ToString());
+                            foreach (FileInfo file in folder.GetFiles("*.xls"))
+                            {
+                                mailAttachmentsLastOne.Add(file.FullName);
+                                Config.log.Info("当前路径：" + folder + "  中 的文件为：" + file.FullName);
+                                Runtime.ShowLog("当前路径：" + folder + "  中 的文件为：" + file.FullName);
+                            }
+                            //获取最新的一个文件
+                            mailAttachmentsLastOne.Sort();
+                            if (mailAttachmentsLastOne != null && mailAttachmentsLastOne.Count > 0)
+                            {
+                                MailAttachmentsList.Add(mailAttachmentsLastOne.Last());
+                                Runtime.ShowLog("当前路径：" + folder + "  中 的最新一个文件为：" + MailAttachmentsList.Last());
+                                Config.log.Info("当前路径：" + folder + "  中 的最新一个文件为：" + MailAttachmentsList.Last());
+                            }
                         }
                     }
-                    System.Threading.Thread.Sleep(60000 * 1);
+
+                    Email myEmail = new Email();
+                    myEmail.host = "smtp.163.com";
+                    myEmail.mailSshPwd = MailSshPwd;
+                    myEmail.mailFrom = MailFrom;
+                    myEmail.mailToArray = MailToStr.Split(';');
+                    myEmail.mailCcArray = MailToCcStr.Split(';');
+                    myEmail.mailSubject = MailSubject + "(" + nowTime.ToString("yyyy-MM-dd") + ")";
+                    myEmail.mailBody = MailBody + "(" + nowTime.ToString("yyyy-MM-dd") + ")";
+                    myEmail.attachmentsPath = MailAttachmentsList.ToArray();
+                    if (myEmail.Send())
+                    {
+                        Config.log.Info("Email 发送 给：" + MailToStr + "成功");
+                        Config.log.Info("Email 抄送 给：" + MailToCcStr + "成功");
+                        //Config.log.Info("Email 附件为："+ MailAttachmentsLastOne.ToString());
+                        Runtime.ShowLog("Email 发送 给：" + MailToStr + "成功");
+                        //Runtime.ShowLog("Email 附件为："+ MailAttachmentsLastOne.ToString());
+                    }
+                    //}
+                    System.Threading.Thread.Sleep(60000 * 10);
                     continue;
                 }
                 catch (Exception ex)
@@ -177,18 +188,41 @@ namespace MySendEmail
         {
             try
             {
-                btnStart.Enabled = false;
-                btnStop.Enabled = true;
                 Runtime.m_IsRunning = true;
-                //获取一个文件夹内全部Excel文件
-                DirectoryInfo folder = new DirectoryInfo(MailAttachmentsPath);
-                MailAttachmentsList.Clear();
-                foreach (FileInfo file in folder.GetFiles("*.xls"))
-                {
-                    MailAttachmentsList.Add(file.FullName);
-                    Runtime.ShowLog("当前路径：" + folder + "  中 的文件为：" + file.FullName);
-                }
 
+                btnStart.Enabled = false;
+                btnStart.BackColor = Color.Lime;
+
+                btnStop.Enabled = true;
+                btnStop.BackColor = Color.GhostWhite;
+                btnTestSendMail.Enabled = false;
+                //获取每个区域最新的文件
+                MailAttachmentsList.Clear();
+                string[] MailPathArry = MailAttachmentsPath.Split(';');
+                if (MailPathArry != null)
+                {
+                    for (int i = 0; i < MailPathArry.Length; i++)
+                    {
+                        //获取一个文件夹内全部Excel文件
+                        List<string> mailAttachmentsLastOne = new List<string>();
+                        DirectoryInfo folder = new DirectoryInfo(MailPathArry[i].ToString());
+                        foreach (FileInfo file in folder.GetFiles("*.xls"))
+                        {
+                            mailAttachmentsLastOne.Add(file.FullName);
+                            Config.log.Info("当前路径：" + folder + "  中 的文件为：" + file.FullName);
+                            Runtime.ShowLog("当前路径：" + folder + "  中 的文件为：" + file.FullName);
+                        }
+                        //获取最新的一个文件
+                        mailAttachmentsLastOne.Sort();
+                        if (mailAttachmentsLastOne != null && mailAttachmentsLastOne.Count > 0)
+                        {
+                            MailAttachmentsList.Add(mailAttachmentsLastOne.Last());
+                            Runtime.ShowLog("当前路径：" + folder + "  中 的最新一个文件为：" + MailAttachmentsList.Last());
+                            Config.log.Info("当前路径：" + folder + "  中 的最新一个文件为：" + MailAttachmentsList.Last());
+                        }
+                    }
+                }
+                //启动定时发送服务
                 Thread StartSendEmailThread = new Thread(RunSendMailLoop);
                 StartSendEmailThread.Start();
 
@@ -205,33 +239,46 @@ namespace MySendEmail
         private void btnStopServer_Click(object sender, EventArgs e)
         {
             btnStart.Enabled = true;
+            btnStart.BackColor = Color.GhostWhite;
+
             btnStop.Enabled = false;
+            btnStop.BackColor = Color.Red;
+            btnTestSendMail.Enabled = true;
+
             Runtime.m_IsRunning = false;
 
         }
 
         private void btnTestSendMail_Click(object sender, EventArgs e)
         {
-            //获取一个文件夹内全部Excel文件
-            DirectoryInfo folder = new DirectoryInfo(MailAttachmentsPath);
             MailAttachmentsList.Clear();
-            foreach (FileInfo file in folder.GetFiles("*.xls"))
+
+            string[] MailPathArry = MailAttachmentsPath.Split(';');
+            if (MailPathArry != null)
             {
-                MailAttachmentsList.Add(file.FullName);
-                Runtime.ShowLog("当前路径：" + folder + "  中 的文件为：" + file.FullName);
+                for (int i = 0; i < MailPathArry.Length; i++)
+                {
+                    //获取一个文件夹内全部Excel文件
+                    List<string> mailAttachmentsLastOne = new List<string>();
+                    DirectoryInfo folder = new DirectoryInfo(MailPathArry[i].ToString());
+                    foreach (FileInfo file in folder.GetFiles("*.xls"))
+                    {
+                        mailAttachmentsLastOne.Add(file.FullName);
+                        Config.log.Info("当前路径：" + folder + "  中 的文件为：" + file.FullName);
+                        Runtime.ShowLog("当前路径：" + folder + "  中 的文件为：" + file.FullName);
+                    }
+                    //获取最新的一个文件
+                    mailAttachmentsLastOne.Sort();
+                    if (mailAttachmentsLastOne != null && mailAttachmentsLastOne.Count > 0)
+                    {
+                        MailAttachmentsList.Add(mailAttachmentsLastOne.Last());
+                        Runtime.ShowLog("当前路径：" + folder + "  中 的最新一个文件为：" + MailAttachmentsList.Last());
+                        Config.log.Info("当前路径：" + folder + "  中 的最新一个文件为：" + MailAttachmentsList.Last());
+                    }
+                }
             }
 
-
-            //获取最新的一个文件
-            MailAttachmentsList.Sort();
-            List<string> MailAttachmentsLastOne = new List<string>();
-            if (MailAttachmentsList != null && MailAttachmentsList.Count > 0)
-            {
-                MailAttachmentsLastOne.Add(MailAttachmentsList.Last());
-                Runtime.ShowLog("当前路径：" + folder + "  中 的最新一个文件为：" + MailAttachmentsList.Last());
-            }
-
-            SendMailBy163MailService(MailAttachmentsLastOne);
+            SendMailBy163MailService(MailAttachmentsList);
         }
     }
 }
