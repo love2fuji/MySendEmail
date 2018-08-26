@@ -63,7 +63,7 @@ namespace MySendEmail
 
         }
 
-
+        //测试的发送邮件
         public void SendMailBy163MailService(List<string> attachFileList)
         {
             try
@@ -93,7 +93,7 @@ namespace MySendEmail
             }
 
         }
-
+        //定时发送邮件
         public void RunSendMailLoop()
         {
             while (Runtime.m_IsRunning)
@@ -103,55 +103,55 @@ namespace MySendEmail
                     DateTime sendTime = Convert.ToDateTime(MailSendTime);
                     DateTime nowTime = DateTime.Now;
 
-                    //if (nowTime.Hour.Equals(sendTime.Hour) && nowTime.Minute.Equals(sendTime.Minute))
-                    //{
-
-                    MailAttachmentsList.Clear();
-
-                    string[] MailPathArry = MailAttachmentsPath.Split(';');
-                    if (MailPathArry != null)
+                    if (nowTime.Hour.Equals(sendTime.Hour) && nowTime.Minute.Equals(sendTime.Minute))
                     {
-                        for (int i = 0; i < MailPathArry.Length; i++)
+
+                        MailAttachmentsList.Clear();
+
+                        string[] MailPathArry = MailAttachmentsPath.Split(';');
+                        if (MailPathArry != null)
                         {
-                            //获取一个文件夹内全部Excel文件
-                            List<string> mailAttachmentsLastOne = new List<string>();
-                            DirectoryInfo folder = new DirectoryInfo(MailPathArry[i].ToString());
-                            foreach (FileInfo file in folder.GetFiles("*.xls"))
+                            for (int i = 0; i < MailPathArry.Length; i++)
                             {
-                                mailAttachmentsLastOne.Add(file.FullName);
-                                Config.log.Info("当前路径：" + folder + "  中 的文件为：" + file.FullName);
-                                Runtime.ShowLog("当前路径：" + folder + "  中 的文件为：" + file.FullName);
-                            }
-                            //获取最新的一个文件
-                            mailAttachmentsLastOne.Sort();
-                            if (mailAttachmentsLastOne != null && mailAttachmentsLastOne.Count > 0)
-                            {
-                                MailAttachmentsList.Add(mailAttachmentsLastOne.Last());
-                                Runtime.ShowLog("当前路径：" + folder + "  中 的最新一个文件为：" + MailAttachmentsList.Last());
-                                Config.log.Info("当前路径：" + folder + "  中 的最新一个文件为：" + MailAttachmentsList.Last());
+                                //获取一个文件夹内全部Excel文件
+                                List<string> mailAttachmentsLastOne = new List<string>();
+                                DirectoryInfo folder = new DirectoryInfo(MailPathArry[i].ToString());
+                                foreach (FileInfo file in folder.GetFiles("*.xls"))
+                                {
+                                    mailAttachmentsLastOne.Add(file.FullName);
+                                    Config.log.Info("当前路径：" + folder + "  中 的文件为：" + file.FullName);
+                                    Runtime.ShowLog("当前路径：" + folder + "  中 的文件为：" + file.FullName);
+                                }
+                                //获取最新的一个文件
+                                mailAttachmentsLastOne.Sort();
+                                if (mailAttachmentsLastOne != null && mailAttachmentsLastOne.Count > 0)
+                                {
+                                    MailAttachmentsList.Add(mailAttachmentsLastOne.Last());
+                                    Runtime.ShowLog("当前路径：" + folder + "  中 的最新一个文件为：" + MailAttachmentsList.Last());
+                                    Config.log.Info("当前路径：" + folder + "  中 的最新一个文件为：" + MailAttachmentsList.Last());
+                                }
                             }
                         }
-                    }
 
-                    Email myEmail = new Email();
-                    myEmail.host = "smtp.163.com";
-                    myEmail.mailSshPwd = MailSshPwd;
-                    myEmail.mailFrom = MailFrom;
-                    myEmail.mailToArray = MailToStr.Split(';');
-                    myEmail.mailCcArray = MailToCcStr.Split(';');
-                    myEmail.mailSubject = MailSubject + "(" + nowTime.ToString("yyyy-MM-dd") + ")";
-                    myEmail.mailBody = MailBody + "(" + nowTime.ToString("yyyy-MM-dd") + ")";
-                    myEmail.attachmentsPath = MailAttachmentsList.ToArray();
-                    if (myEmail.Send())
-                    {
-                        Config.log.Info("Email 发送 给：" + MailToStr + "成功");
-                        Config.log.Info("Email 抄送 给：" + MailToCcStr + "成功");
-                        //Config.log.Info("Email 附件为："+ MailAttachmentsLastOne.ToString());
-                        Runtime.ShowLog("Email 发送 给：" + MailToStr + "成功");
-                        //Runtime.ShowLog("Email 附件为："+ MailAttachmentsLastOne.ToString());
+                        Email myEmail = new Email();
+                        myEmail.host = "smtp.163.com";
+                        myEmail.mailSshPwd = MailSshPwd;
+                        myEmail.mailFrom = MailFrom;
+                        myEmail.mailToArray = MailToStr.Split(';');
+                        myEmail.mailCcArray = MailToCcStr.Split(';');
+                        myEmail.mailSubject = MailSubject + "(" + nowTime.ToString("yyyy-MM-dd") + ")";
+                        myEmail.mailBody = MailBody + "(" + nowTime.ToString("yyyy-MM-dd") + ")";
+                        myEmail.attachmentsPath = MailAttachmentsList.ToArray();
+                        if (myEmail.Send())
+                        {
+                            Config.log.Info("Email 发送 给：" + MailToStr + "成功");
+                            Config.log.Info("Email 抄送 给：" + MailToCcStr + "成功");
+                            //Config.log.Info("Email 附件为："+ MailAttachmentsLastOne.ToString());
+                            Runtime.ShowLog("Email 发送 给：" + MailToStr + "成功");
+                            //Runtime.ShowLog("Email 附件为："+ MailAttachmentsLastOne.ToString());
+                        }
                     }
-                    //}
-                    System.Threading.Thread.Sleep(60000 * 10);
+                    System.Threading.Thread.Sleep(60000 * 1);
                     continue;
                 }
                 catch (Exception ex)
@@ -234,8 +234,6 @@ namespace MySendEmail
             }
         }
 
-
-
         private void btnStopServer_Click(object sender, EventArgs e)
         {
             btnStart.Enabled = true;
@@ -279,6 +277,61 @@ namespace MySendEmail
             }
 
             SendMailBy163MailService(MailAttachmentsList);
+        }
+
+        //------------------窗体最小化，不退出软件--------------------------------------------------------
+        private void Main_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            //窗体关闭原因为单击"关闭"按钮或Alt+F4  
+            if (e.CloseReason == CloseReason.UserClosing)
+            {
+                e.Cancel = true;           //取消关闭操作 表现为不关闭窗体  
+                this.Hide();               //隐藏窗体  
+            }
+        }
+
+        private void notifyIcon1_MouseClick(object sender, MouseEventArgs e)
+        {
+            //点击鼠标"左键"发生  
+            if (e.Button == MouseButtons.Left)
+            {
+                this.Visible = true;                        //窗体可见  
+                this.WindowState = FormWindowState.Normal;  //窗体默认大小  
+                this.notifyIcon1.Visible = true;            //设置图标可见  
+            }
+        }
+
+        private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            //点击鼠标"左键"发生  
+            if (e.Button == MouseButtons.Left)
+            {
+                this.Visible = true;                        //窗体可见  
+                this.WindowState = FormWindowState.Normal;  //窗体默认大小  
+                this.notifyIcon1.Visible = true;            //设置图标可见  
+            }
+        }
+
+        private void toolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            this.Show();                                //窗体显示  
+            this.WindowState = FormWindowState.Normal;  //窗体状态默认大小  
+            this.Activate();                            //激活窗体给予焦点 
+        }
+
+        private void toolStripMenuItem2_Click(object sender, EventArgs e)
+        {
+            //点击"是(YES)"退出程序  
+            if (MessageBox.Show("确定要退出程序?", "重要提示",
+                        System.Windows.Forms.MessageBoxButtons.YesNo,
+                        System.Windows.Forms.MessageBoxIcon.Warning)
+                == System.Windows.Forms.DialogResult.Yes)
+            {
+                notifyIcon1.Visible = false;   //设置图标不可见  
+                this.Close();                  //关闭窗体  
+                this.Dispose();                //释放资源  
+                Application.Exit();            //关闭应用程序窗体  
+            }
         }
     }
 }
