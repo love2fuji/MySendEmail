@@ -75,8 +75,8 @@ namespace MySendEmail
                 myEmail.mailFrom = MailFrom;
                 myEmail.mailToArray = MailToStr.Split(';');
                 myEmail.mailCcArray = MailToCcStr.Split(';');
-                myEmail.mailSubject = MailSubject + "(" + nowTime.ToString("yyyy-MM-dd HH:mm:ss") + ") 测试成功";
-                myEmail.mailBody = MailBody + "(" + nowTime.ToString("yyyy-MM-dd HH:mm:ss") + ") 测试成功"; ;
+                myEmail.mailSubject = MailSubject + "(" + nowTime.ToString("yyyy-MM-dd HH:mm:ss") + ") ";
+                myEmail.mailBody = MailBody + "(" + nowTime.ToString("yyyy-MM-dd HH:mm:ss") + ")"; ;
                 myEmail.attachmentsPath = attachFileList.ToArray();
                 if (myEmail.Send())
                 {
