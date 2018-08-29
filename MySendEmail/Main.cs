@@ -20,6 +20,12 @@ namespace MySendEmail
         {
             InitializeComponent();
         }
+        //Thread StartSendEmailThread = new Thread(RunSendMailLoop);
+
+        ManualResetEvent _shutdownEvent = new ManualResetEvent(false);
+        ManualResetEvent _pauseEvent = new ManualResetEvent(true);
+
+        Thread _thread;
 
         public static DES dd = new DES();
         //发件人邮箱
@@ -39,27 +45,20 @@ namespace MySendEmail
         /// <summary>
         /// 带发送全部附件的路径（一个文件夹内的所有Excel文件）
         /// </summary>
-        List<string> MailAttachmentsList = new List<string>();
+        static List<string> MailAttachmentsList = new List<string>();
 
         private void Form1_Load(object sender, EventArgs e)
         {
             Runtime.ServerLog = this.ServerLog;
 
             Runtime.m_IsRunning = false;
+            btnStart.Text = "启动服务";
+            btnStop.Text = "服务已停止";
+
             Runtime.ShowLog("初始化软件");
             Config.log.Info("初始化软件");
             txtBoxEmailAddress.Text = MailToStr;
-            Runtime.ShowLog("发件人地址:" + MailFrom);
-            Runtime.ShowLog("收件人地址:" + MailToStr);
-            Runtime.ShowLog("抄送地址:" + MailToCcStr);
             textBoxSendTime.Text = MailSendTime;
-            Runtime.ShowLog("定时发送时间为:" + MailSendTime);
-
-            DateTime sendTime = Convert.ToDateTime(MailSendTime);
-            DateTime nowTime = DateTime.Now;
-
-            Runtime.ShowLog("定时发送时间为:" + sendTime);
-            Runtime.ShowLog("当前的时间为:" + nowTime);
 
         }
 
@@ -94,7 +93,7 @@ namespace MySendEmail
 
         }
         //定时发送邮件
-        public void RunSendMailLoop()
+        public static void RunSendMailLoop()
         {
             while (Runtime.m_IsRunning)
             {
@@ -139,8 +138,8 @@ namespace MySendEmail
                         myEmail.mailFrom = MailFrom;
                         myEmail.mailToArray = MailToStr.Split(';');
                         myEmail.mailCcArray = MailToCcStr.Split(';');
-                        myEmail.mailSubject = MailSubject + "(" + nowTime.ToString("yyyy-MM-dd") + ")";
-                        myEmail.mailBody = MailBody + "(" + nowTime.ToString("yyyy-MM-dd") + ")";
+                        myEmail.mailSubject = MailSubject + "(" + nowTime.AddDays(-1).ToString("yyyy-MM-dd") + ")";
+                        myEmail.mailBody = MailBody + "(" + nowTime.AddDays(-1).ToString("yyyy-MM-dd") + ")";
                         myEmail.attachmentsPath = MailAttachmentsList.ToArray();
                         if (myEmail.Send())
                         {
@@ -165,25 +164,12 @@ namespace MySendEmail
 
         }
 
-        //文件夹中按时间排序最新的文件读取
-        public class DirectoryLastTimeComparer : IComparer<DirectoryInfo>
-        {
-            #region IComparer<DirectoryInfo> 成员
 
-            public int Compare(DirectoryInfo x, DirectoryInfo y)
-            {
-                return x.LastWriteTime.CompareTo(y.LastWriteTime);
-                //依名称排序
-                //return x.FullName.CompareTo(y.FullName);//递增
-                //return y.FullName.CompareTo(x.FullName);//递减
-
-                //依修改日期排序
-                //return x.LastWriteTime.CompareTo(y.LastWriteTime);//递增
-                //return y.LastWriteTime.CompareTo(x.LastWriteTime);//递减
-            }
-
-            #endregion
-        }
+        /// <summary>
+        /// 启动发送服务
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btnStart_Click(object sender, EventArgs e)
         {
             try
@@ -191,11 +177,29 @@ namespace MySendEmail
                 Runtime.m_IsRunning = true;
 
                 btnStart.Enabled = false;
+                btnStart.Text = "服务已运行";
                 btnStart.BackColor = Color.Lime;
 
                 btnStop.Enabled = true;
+                btnStop.Text = "停止服务";
                 btnStop.BackColor = Color.GhostWhite;
                 btnTestSendMail.Enabled = false;
+                textBoxSendTime.Text = MailSendTime;
+                Runtime.ShowLog("发件人地址:" + MailFrom);
+                Config.log.Info("发件人地址:" + MailFrom);
+
+                Runtime.ShowLog("收件人地址:" + MailToStr);
+                Config.log.Info("收件人地址:" + MailToStr);
+
+                Runtime.ShowLog("抄送地址:" + MailToCcStr);
+                Config.log.Info("抄送地址:" + MailToCcStr);
+
+                Runtime.ShowLog("定时发送时间为:" + MailSendTime);
+                Config.log.Info("定时发送时间为:" + MailSendTime);
+
+                Runtime.ShowLog("当前的时间为:" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                Config.log.Info("当前的时间为:" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+
                 //获取每个区域最新的文件
                 MailAttachmentsList.Clear();
                 string[] MailPathArry = MailAttachmentsPath.Split(';');
@@ -223,8 +227,22 @@ namespace MySendEmail
                     }
                 }
                 //启动定时发送服务
-                Thread StartSendEmailThread = new Thread(RunSendMailLoop);
-                StartSendEmailThread.Start();
+                //Thread StartSendEmailThread = new Thread(RunSendMailLoop);
+                //StartSendEmailThread.Start();
+                if (_thread == null)
+                {
+                    _thread = new Thread(RunSendMailLoop);
+                    _thread.IsBackground = true;
+                    _thread.Start();
+                    Runtime.ShowLog("服务启动：" + _thread.ManagedThreadId + "  " + _thread.Name+": "+_thread.ThreadState);
+
+                }
+                else
+                {
+                    Resume();
+                    Runtime.ShowLog("恢复服务：" + _thread.ManagedThreadId + "  " + _thread.Name + ": " + _thread.ThreadState);
+                }
+
 
             }
             catch (Exception ex)
@@ -237,14 +255,17 @@ namespace MySendEmail
         private void btnStopServer_Click(object sender, EventArgs e)
         {
             btnStart.Enabled = true;
+            btnStart.Text = "启动服务";
             btnStart.BackColor = Color.GhostWhite;
 
             btnStop.Enabled = false;
+            btnStop.Text = "服务已停止";
             btnStop.BackColor = Color.Red;
             btnTestSendMail.Enabled = true;
-
+            Pause();
+            //Stop();
+            Runtime.ShowLog("停止服务："+_thread.ManagedThreadId+"  " + _thread.Name + ": " + _thread.ThreadState);
             Runtime.m_IsRunning = false;
-
         }
 
         private void btnTestSendMail_Click(object sender, EventArgs e)
@@ -277,6 +298,56 @@ namespace MySendEmail
             }
 
             SendMailBy163MailService(MailAttachmentsList);
+        }
+
+
+        public void Start(ThreadStart DoWork)
+        {
+            _thread = new Thread(DoWork);
+            _thread.Start();
+        }
+
+        public void Pause()
+        {
+            _pauseEvent.Reset();
+        }
+
+        public void Resume()
+        {
+            _pauseEvent.Set();
+        }
+
+        public void Stop()
+        {
+            // Signal the shutdown event
+            _shutdownEvent.Set();
+
+            // Make sure to resume any paused threads
+            _pauseEvent.Set();
+
+            // Wait for the thread to exit
+            _thread.Join();
+            _thread = null;
+        }
+
+        //文件夹中按时间排序最新的文件读取
+        public class DirectoryLastTimeComparer : IComparer<DirectoryInfo>
+        {
+            #region IComparer<DirectoryInfo> 成员
+
+            public int Compare(DirectoryInfo x, DirectoryInfo y)
+            {
+                return x.LastWriteTime.CompareTo(y.LastWriteTime);
+                //依名称排序
+                //return x.FullName.CompareTo(y.FullName);//递增
+                //return y.FullName.CompareTo(x.FullName);//递减
+
+                //依修改日期排序
+                //return x.LastWriteTime.CompareTo(y.LastWriteTime);//递增
+                //return y.LastWriteTime.CompareTo(x.LastWriteTime);//递减
+            }
+
+            #endregion
         }
 
         //------------------窗体最小化，不退出软件--------------------------------------------------------
