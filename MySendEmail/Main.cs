@@ -290,16 +290,7 @@ namespace MySendEmail
         {
             try
             {
-                Runtime.m_IsRunning = true;
-
-                btnStart.Enabled = false;
-                btnStart.Text = "服务已运行";
-                btnStart.BackColor = Color.Lime;
-
-                btnStop.Enabled = true;
-                btnStop.Text = "停止服务";
-                btnStop.BackColor = Color.GhostWhite;
-                btnTestSendMail.Enabled = false;
+               
                 textBoxSendTime.Text = MailSendTime;
                 Runtime.ShowLog("发件人地址:" + MailFrom);
                 Config.log.Info("发件人地址:" + MailFrom);
@@ -358,6 +349,17 @@ namespace MySendEmail
                     Resume();
                     Runtime.ShowLog("恢复服务：" + _thread.ManagedThreadId + "  " + _thread.Name + ": " + _thread.ThreadState);
                 }
+                //启动成功后，设置按钮显示
+                Runtime.m_IsRunning = true;
+
+                btnStart.Enabled = false;
+                btnStart.Text = "服务已运行";
+                btnStart.BackColor = Color.Lime;
+
+                btnStop.Enabled = true;
+                btnStop.Text = "停止服务";
+                btnStop.BackColor = Color.GhostWhite;
+                btnTestSendMail.Enabled = false;
 
 
             }
@@ -370,18 +372,28 @@ namespace MySendEmail
 
         private void btnStopServer_Click(object sender, EventArgs e)
         {
-            btnStart.Enabled = true;
-            btnStart.Text = "启动服务";
-            btnStart.BackColor = Color.GhostWhite;
+            try
+            {
+                btnStart.Enabled = true;
+                btnStart.Text = "启动服务";
+                btnStart.BackColor = Color.GhostWhite;
 
-            btnStop.Enabled = false;
-            btnStop.Text = "服务已停止";
-            btnStop.BackColor = Color.Red;
-            btnTestSendMail.Enabled = true;
-            Pause();
-            //Stop();
-            Runtime.ShowLog("停止服务：" + _thread.ManagedThreadId + "  " + _thread.Name + ": " + _thread.ThreadState);
-            Runtime.m_IsRunning = false;
+                btnStop.Enabled = false;
+                btnStop.Text = "服务已停止";
+                btnStop.BackColor = Color.Red;
+                btnTestSendMail.Enabled = true;
+                //暂停线程
+                Pause();
+                //Stop();
+                Runtime.ShowLog("停止服务");
+                Runtime.m_IsRunning = false;
+            }
+            catch (Exception ex)
+            {
+
+                Runtime.ShowLog("停止服务 失败: "+ex.Message);
+            }
+            
         }
 
         /// <summary>
@@ -561,7 +573,8 @@ namespace MySendEmail
             #endregion
         }
 
-        //------------------窗体最小化，不退出软件--------------------------------------------------------
+        //------------------窗体最小化，不退出软件----------------------------
+        #region 窗体最小化，不退出软件
         private void Main_FormClosing(object sender, FormClosingEventArgs e)
         {
             //窗体关闭原因为单击"关闭"按钮或Alt+F4  
@@ -615,5 +628,7 @@ namespace MySendEmail
                 Application.Exit();            //关闭应用程序窗体  
             }
         }
+        #endregion 窗体最小化，不退出软件
+
     }
 }
