@@ -81,6 +81,7 @@ namespace MySendEmail
                 myEmail.mailToArray = MailToStr.Split(';');
                 myEmail.mailCcArray = MailToCcStr.Split(';');
                 myEmail.mailSubject = MailSubject + "(" + nowTime.ToString("yyyy-MM-dd HH:mm:ss") + ") ";
+
                 //判断附件是否为空
                 if (MailAttachmentsList.Count==0 || MailAttachmentsList == null)
                 {
@@ -156,7 +157,7 @@ namespace MySendEmail
                                 //获取一个文件夹内全部Excel文件
                                 List<string> mailAttachmentsLastOne = new List<string>();
                                 DirectoryInfo folder = new DirectoryInfo(MailPathArry[i].ToString());
-                                foreach (FileInfo file in folder.GetFiles("*.xls"))
+                                foreach (FileInfo file in folder.GetFiles("*.csv"))
                                 {
                                     mailAttachmentsLastOne.Add(file.FullName);
                                     Config.log.Info("当前路径：" + folder + "  中 的文件为：" + file.Name);
@@ -413,7 +414,7 @@ namespace MySendEmail
                     //获取一个文件夹内全部Excel文件
                     List<string> mailAttachmentsLastOne = new List<string>();
                     DirectoryInfo folder = new DirectoryInfo(MailPathArry[i].ToString());
-                    foreach (FileInfo file in folder.GetFiles("*.xls"))
+                    foreach (FileInfo file in folder.GetFiles("*.csv"))
                     {
                         mailAttachmentsLastOne.Add(file.FullName);
                         Config.log.Info("当前路径：" + folder + "  中 的文件为：" + file.Name);
